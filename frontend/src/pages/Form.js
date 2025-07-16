@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
-import { getFirestore, collection, addDoc, Timestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, Timestamp, getDoc, doc, updateDoc } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
@@ -19,6 +19,8 @@ const storage = getStorage(app);
 
 function Form() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [editId, setEditId] = useState(null);
   const [form, setForm] = useState({
     entryType: "expense",
     item: "",
@@ -65,7 +67,20 @@ function Form() {
       uid: user.uid || "",
       adminleader: user.adminleader || user.name || ""
     }));
-  }, []);
+    // Check for edit mode
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    if (id) {
+      setEditId(id);
+      // Load expense data
+      getDoc(doc(db, "expenses", id)).then(docSnap => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setForm(f => ({ ...f, ...data, date: data.date && data.date.toDate ? data.date.toDate().toISOString().slice(0,10) : "" }));
+        }
+      });
+    }
+  }, [location.search]);
 
   const handleChange = e => {
     const { name, value } = e.target;
@@ -96,14 +111,42 @@ function Form() {
     setError("");
     setSuccess("");
     try {
-      // Get user info again to ensure up-to-date
       const user = JSON.parse(localStorage.getItem("user") || "{}");
-      // Upload files
       const invPdfUrl = await uploadFile(invPdf, "inv-pdf");
       const invImgUrl = await uploadFile(invImg, "inv-img");
       const invPdfEmployeeUrl = await uploadFile(invPdfEmployee, "inv-employee-pdf");
       const invImgEmployeeUrl = await uploadFile(invImgEmployee, "inv-employee-img");
-      // Prepare data
+      let status = form.status;
+      if (
+        user.role === "admin" &&
+        (invPdfEmployee || invImgEmployee)
+      ) {
+        status = "โอนชำระโดยพนักงาน";
+      }
+      // If editing and adminleader, set status to 'หัวหน้าอนุมัติ'
+      if (editId && user.role === "adminleader") {
+        // เตรียมข้อมูลที่จะอัปเดต
+        const updatePayload = {
+          ...form,
+          invPdfUrl: invPdfUrl || form.invPdfUrl,
+          invImgUrl: invImgUrl || form.invImgUrl,
+          invPdfEmployeeUrl: invPdfEmployeeUrl || form.invPdfEmployeeUrl,
+          invImgEmployeeUrl: invImgEmployeeUrl || form.invImgEmployeeUrl,
+          status: "หัวหน้าอนุมัติ",
+          date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
+          nextDate: form.nextDate ? Timestamp.fromDate(new Date(form.nextDate)) : "",
+        };
+        // ลบ field ที่เป็น undefined ออกจาก updatePayload
+        Object.keys(updatePayload).forEach(key => {
+          if (updatePayload[key] === undefined) delete updatePayload[key];
+        });
+        await updateDoc(doc(db, "expenses", editId), updatePayload);
+        setSuccess("อัปเดตรายการสำเร็จ!");
+        setTimeout(() => navigate('/dashboard'), 1000);
+        setLoading(false);
+        return;
+      }
+      // Add new document as before
       const data = {
         ...form,
         uid: user.uid,
@@ -118,13 +161,13 @@ function Form() {
         invImgUrl,
         invPdfEmployeeUrl,
         invImgEmployeeUrl,
+        status,
         createdAt: Timestamp.now()
       };
       await addDoc(collection(db, "expenses"), data);
       setSuccess("บันทึกข้อมูลสำเร็จ!");
       setForm(f => ({ ...f, item: "", date: "", bank: "", accountNumber: "", accountName: "", amount: "", expenseType: "", nextDate: "", frequency: "" }));
       setInvPdf(null); setInvImg(null); setInvPdfEmployee(null); setInvImgEmployee(null);
-      // Navigate to dashboard after success
       setTimeout(() => navigate('/dashboard'), 1000);
     } catch (err) {
       setError("เกิดข้อผิดพลาด: " + err.message);

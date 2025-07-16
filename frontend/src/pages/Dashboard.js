@@ -28,14 +28,24 @@ function Dashboard() {
   const [lightboxImg, setLightboxImg] = useState(null);
   const [entryTypeFilter, setEntryTypeFilter] = useState("expense");
 
-  const statusList = [
+  // Status list by role
+  const fullStatusList = [
     { label: "⏳ รอทำเบิก", value: "รอทำเบิก", color: "#757575" },
+    { label: "✅ หัวหน้าอนุมัติ", value: "หัวหน้าอนุมัติ", color: "#2979ff" },
+    { label: "🔍 ตรวจสอบแล้ว", value: "ตรวจสอบแล้ว", color: "#43a047" },
+    { label: "❌ ไม่เรียบร้อย", value: "ไม่เรียบร้อย", color: "#29b6f6" },
+    { label: "✅ ส่งให้ลูกค้าแล้ว", value: "ส่งให้ลูกค้าแล้ว", color: "#43a047" },
+    { label: "❌ ยกเลิก", value: "ยกเลิก", color: "#e53935" },
+    { label: "💸 โอนชำระโดยพนักงาน", value: "โอนชำระโดยพนักงาน", color: "#8d6e63" }
+  ];
+  const adminLeaderStatusList = [
     { label: "✅ หัวหน้าอนุมัติ", value: "หัวหน้าอนุมัติ", color: "#2979ff" },
     { label: "🔍 ตรวจสอบแล้ว", value: "ตรวจสอบแล้ว", color: "#43a047" },
     { label: "❌ ไม่เรียบร้อย", value: "ไม่เรียบร้อย", color: "#29b6f6" },
     { label: "✅ ส่งให้ลูกค้าแล้ว", value: "ส่งให้ลูกค้าแล้ว", color: "#43a047" },
     { label: "❌ ยกเลิก", value: "ยกเลิก", color: "#e53935" }
   ];
+  const statusList = user && user.role === "adminleader" ? adminLeaderStatusList : fullStatusList;
   const [selectedStatus, setSelectedStatus] = useState(null);
 
   useEffect(() => {
@@ -254,11 +264,23 @@ function Dashboard() {
                   </div>
                 )}
                 {/* Approve/Cancel Buttons */}
-                {selectedExpense.status !== "อนุมัติ" && selectedExpense.status !== "ยกเลิก" && (
+                {["adminleader", "accountor", "hr", "vj"].includes(user?.role) && selectedExpense.status !== "อนุมัติ" && selectedExpense.status !== "ยกเลิก" && (
                   <div style={{ marginTop: 20 }}>
                     <button className="btn btn-success me-2" onClick={async () => {
+                      if (
+                        user?.role === "adminleader" &&
+                        ["รอทำเบิก", "โอนชำระโดยพนักงาน"].includes(selectedExpense.status)
+                      ) {
+                        navigate(`/form?id=${selectedExpense.id}`);
+                        return;
+                      }
                       try {
-                        await updateDoc(doc(db, "expenses", selectedExpense.id), { status: "อนุมัติ" });
+                        // เตรียม payload เผื่ออนาคตมี field อื่น
+                        const updatePayload = { status: "อนุมัติ" };
+                        Object.keys(updatePayload).forEach(key => {
+                          if (updatePayload[key] === undefined) delete updatePayload[key];
+                        });
+                        await updateDoc(doc(db, "expenses", selectedExpense.id), updatePayload);
                         setSelectedExpense({ ...selectedExpense, status: "อนุมัติ" });
                         setExpenses(expenses.map(e => e.id === selectedExpense.id ? { ...e, status: "อนุมัติ" } : e));
                       } catch (err) {
@@ -268,7 +290,11 @@ function Dashboard() {
                     <button className="btn btn-danger" onClick={async () => {
                       if (!window.confirm("ยืนยันการยกเลิกรายการนี้?")) return;
                       try {
-                        await updateDoc(doc(db, "expenses", selectedExpense.id), { status: "ยกเลิก" });
+                        const updatePayload = { status: "ยกเลิก" };
+                        Object.keys(updatePayload).forEach(key => {
+                          if (updatePayload[key] === undefined) delete updatePayload[key];
+                        });
+                        await updateDoc(doc(db, "expenses", selectedExpense.id), updatePayload);
                         setSelectedExpense({ ...selectedExpense, status: "ยกเลิก" });
                         setExpenses(expenses.map(e => e.id === selectedExpense.id ? { ...e, status: "ยกเลิก" } : e));
                       } catch (err) {
