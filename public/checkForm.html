@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>📄 ตรวจสอบความเรียบร้อย</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .form-label i {
+      color: #0d6efd;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card p-4">
+          <h3 class="text-center mb-4"><i class="bi bi-clipboard-check-fill text-success"></i> ตรวจสอบความเรียบร้อย</h3>
+
+          <form id="checkForm">
+            <input type="hidden" name="docId" />
+            <div class="mb-4">
+              <label class="form-label"><i class="bi bi-question-circle-fill"></i> สถานะความเรียบร้อย:</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="completeness" id="complete" value="เรียบร้อย">
+                <label class="form-check-label" for="complete"><i class="bi bi-check-circle-fill text-success"></i> เรียบร้อย</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="completeness" id="incomplete" value="ไม่เรียบร้อย">
+                <label class="form-check-label" for="incomplete"><i class="bi bi-x-circle-fill text-danger"></i> ไม่เรียบร้อย</label>
+              </div>
+            </div>
+
+            <div id="completeFields" class="mb-4 d-none">
+              <label class="form-label"><i class="bi bi-file-earmark-pdf-fill"></i> แนบไฟล์ PDF:</label>
+              <input type="file" name="checkpdf" class="form-control mb-3" accept=".pdf">
+
+              <label class="form-label"><i class="bi bi-image-fill"></i> แนบรูปภาพ:</label>
+              <input type="file" name="checkimg" class="form-control" accept="image/*">
+            </div>
+
+            <div id="incompleteFields" class="mb-4 d-none">
+              <label class="form-label"><i class="bi bi-pencil-square"></i> หมายเหตุ:</label>
+              <textarea name="note" class="form-control" rows="3" placeholder="ระบุรายละเอียดหรือปัญหาที่พบ..."></textarea>
+            </div>
+            <input type="hidden" name="status" />
+            <div class="text-end">
+              <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save2-fill"></i> บันทึก
+              </button>
+            </div>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" >
+    const completeRadio = document.getElementById("complete");
+    const incompleteRadio = document.getElementById("incomplete");
+    const completeFields = document.getElementById("completeFields");
+    const incompleteFields = document.getElementById("incompleteFields");
+
+    function toggleFields() {
+      if (completeRadio.checked) {
+        completeFields.classList.remove("d-none");
+        incompleteFields.classList.add("d-none");
+      } else if (incompleteRadio.checked) {
+        incompleteFields.classList.remove("d-none");
+        completeFields.classList.add("d-none");
+      } else {
+        completeFields.classList.add("d-none");
+        incompleteFields.classList.add("d-none");
+      }
+    }
+
+    completeRadio.addEventListener("change", toggleFields);
+    incompleteRadio.addEventListener("change", toggleFields);
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc ,Timestamp , doc, getDoc,updateDoc  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
+      authDomain: "bill-for--vj-mart.firebaseapp.com",
+      projectId: "bill-for--vj-mart",
+      storageBucket: "bill-for--vj-mart.appspot.com",
+      messagingSenderId: "700824685931",
+      appId: "1:700824685931:web:856b3880c0496b5fd1902e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    function getDocIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("docId");
+    }
+
+
+    async function loadExpenseData(docId) {
+      if (!docId) return;
+      const docRef = doc(db, "expenses", docId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        alert("ไม่พบข้อมูลรายการนี้");
+        return;
+      }
+      const data = docSnap.data();
+
+      // แปลง timestamp
+      if (data.date?.toDate) {
+        data.date = data.date.toDate().toISOString().split("T")[0];
+      }
+      if (data.nextDate?.toDate) {
+        data.nextDate = data.nextDate.toDate().toISOString().split("T")[0];
+      }
+
+      // ✅ สำคัญ: ใส่ docId กลับเข้า form
+      document.querySelector('input[name="docId"]').value = docId;
+
+      populateForm(data);
+    }
+
+
+    function populateForm(data) {
+      const form = document.getElementById("expenseForm");
+      if (!form) return;
+
+      for (const key in data) {
+        const input = form.elements[key];
+        console.log("💡 กำลังเซ็ต item:", data.item);
+        form.elements["item"].value = data.item || "";       
+        if (input && input.type !== "file") {
+          if (data[key]?.toDate) {
+            input.value = data[key].toDate().toISOString().split("T")[0];  // แปลง timestamp เป็น date string
+          } else {
+            input.value = data[key];
+          }
+        }
+      }
+
+
+    }
+    window.addEventListener("DOMContentLoaded",async  () => {
+      // Step 1: โหลดข้อมูล user จาก localStorage
+      const user = JSON.parse(localStorage.getItem("user"));
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      //if (!user) {
+       // alert("กรุณาเข้าสู่ระบบอีกครั้ง");
+        //window.location.href = "index.html"; // หรือหน้า login
+        //return;
+      //}
+
+
+      
+      const checkpdfInput = document.querySelector('input[name="checkpdf"]');
+      const checkimgInput = document.querySelector('input[name="checkimg"]');
+      const urlParams = new URLSearchParams(window.location.search);
+      const docId = urlParams.get("docId");
+      console.log("📌 docId from URL:", docId);  // เพิ่มตรงนี้
+      if (docId) {
+        const docRef = doc(db, "expenses", docId);
+        try {
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            for (const key in data) {
+              const input = document.querySelector(`[name="${key}"]`);
+              if (input && input.type !== "file") {
+                input.value = data[key];
+              }
+            }
+          } else {
+            alert("ไม่พบข้อมูลเอกสาร");
+          }
+        } catch (err) {
+          console.error("โหลดไม่สำเร็จ:", err);
+          alert("เกิดข้อผิดพลาด: " + err.message);
+        }
+        await loadExpenseData(docId);  // ✅ โหลดข้อมูลเข้า form
+      }
+
+
+      // function updateStatus() {
+      //   const hasPdf = checkpdfInput.files.length > 0;
+      //   const hasImg = checkimgInput.files.length > 0;
+      //   if (currentUser.role === "accountor") {
+      //     statusInput.value = "ตรวจสอบแล้ว";
+      //   }
+      // }
+
+      // // เรียกเมื่อมีการเลือกไฟล์
+      // checkpdfInput.addEventListener("change", updateStatus);
+      // checkimgInput.addEventListener("change", updateStatus);
+
+      // // เรียกตอนโหลดหน้าเผื่อมีการ autofill
+      // updateStatus();
+
+      // ตรวจสอบให้แน่ใจว่ามี input ชื่อ status
+      let statusInput = document.querySelector('input[name="status"]');
+      if (!statusInput) {
+        statusInput = document.createElement("input");
+        statusInput.type = "hidden";
+        statusInput.name = "status";
+        document.getElementById("checkForm").appendChild(statusInput);
+      }
+      // เมื่อเปลี่ยน radio ให้ปรับค่า status
+      function updateStatus() {
+        if (completeRadio.checked) {
+          statusInput.value = "ตรวจสอบแล้ว";
+        } else if (incompleteRadio.checked) {
+          statusInput.value = "ไม่เรียบร้อย";
+        } else {
+          statusInput.value = "";
+        }
+      }
+
+      // เพิ่ม event listener ให้ radio ทั้งสองตัว
+      completeRadio.addEventListener("change", updateStatus);
+      incompleteRadio.addEventListener("change", updateStatus);
+
+
+
+      // Step 3: กำหนด event submit form
+      checkForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const docId = document.querySelector('input[name="docId"]').value?.trim() || null;
+
+        try {
+          const dataToUpdate = {};
+          for (const [key, value] of formData.entries()) {
+            if (!["checkpdf", "checkimg"].includes(key) && value !== "") {
+              dataToUpdate[key] = value;
+            }
+          }
+
+
+          if (docId) {
+            // ✅ อัปเดตเอกสารเดิม
+            const docRef = doc(db, "expenses", docId);
+            await updateDoc(docRef, dataToUpdate);
+          } else {
+            alert("Saved Failed")
+            // ตั้งค่า docId ให้ form เพื่อใช้ต่อ
+            document.querySelector('input[name="docId"]').value = newDocRef.id;
+          }
+
+          // ✅ ส่งไฟล์ไป backend
+          const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "Upload failed");
+          }
+
+          alert("✅ บันทึกสำเร็จ!");
+          window.location.href = "dashboard.html";
+        } catch (err) {
+          alert("❌ บันทึกไม่สำเร็จ: " + err.message);
+          console.error(err);
+        }
+      });
+
+      
+        
+    });
+  </script>
+
+
+</body>
+</html>
+

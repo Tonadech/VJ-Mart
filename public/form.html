@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>📋 ฟอร์มรายจ่าย</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body >
+  <div class="container py-5">
+    <h2 class="mb-3">📋 กรอกรายการค่าใช้จ่าย</h2>
+
+    <form id="expenseForm" class="row g-3" enctype="multipart/form-data">
+      <input type="hidden" name="docId">
+      <div class="col-12">
+        <label class="form-label">ประเภท:</label>
+        <select class="form-select" name="entryType">
+          <option value="expense">รายการปกติ</option>
+          <option value="recurring">Recurring</option>
+        </select>
+      </div>
+      <div id="recurringFields" class="row g-3 d-none">
+        <div class="col-md-4">
+          <label>วันที่ถัดไป</label>
+          <input type="date" name="nextDate" class="form-control">
+        </div>
+        <div class="col-md-4">
+          <label>หน่วยความถี่</label>
+          <select name="frequencyUnit" class="form-select" required>
+            <option value="days">วัน</option>
+            <option value="weeks">สัปดาห์</option>
+            <option value="months">เดือน</option>
+            <option value="years">ปี</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label>ความถี่ (วัน)</label>
+          <input type="number" name="frequency" class="form-control">
+        </div>
+        <!-- <div class="col-md-4">
+          <label>จำนวนความถี่</label>
+          <input type="number" name="repeatCount" class="form-control">
+        </div> -->
+      </div>
+      <!-- <div class="col-md-4"><label>วันที่ถัดไป</label><input type="date" name="nextDate" class="form-control"></div>
+      <div class="col-md-4"><label>ความถี่ (วัน)</label><input type="number" name="frequency" class="form-control"></div>
+      <div class="col-md-4"><label>จำนวนความถี่</label><input type="number" name="repeatCount" class="form-control"></div> -->
+      <input type="hidden" name="docId" />
+      <div class="col-md-3"><label>รายการ</label><input type="text" name="item" class="form-control"></div>
+      <div class="col-md-3"><label>วันที่</label><input type="date" name="date" class="form-control" required></div>
+      <div class="col-md-6 d-none"><label>ชื่อพนักงาน</label><input type="text" name="employee" class="form-control" readonly></div>
+      <div class="col-md-6 d-none"><label>Role</label><input type="text" name="role" class="form-control" ></div>
+      <div class="col-md-6 d-none">
+      <label>UID</label>
+        <input type="text" name="uid" id="uid" class="form-control" readonly>
+      </div>
+
+      <div class="col-md-6 d-none">
+        <label>Admin Leader</label>
+        <input type="text" name="adminleader" id="adminleader" class="form-control" readonly>
+      </div>
+      <div class="col-md-6 d-none"><label>บริษัท</label><input type="text" name="company" class="form-control" readonly></div>
+      <div class="col-md-6 d-none"><label>แผนก</label><input type="text" name="division" class="form-control" readonly></div>
+      <div class="col-md-3"><label>ธนาคาร</label><input type="text" name="bank" class="form-control"></div>
+      <div class="col-md-3"><label>เลขบัญชี</label><input type="text" name="accountNumber" class="form-control"></div>
+      <div class="col-md-3"><label>ชื่อบัญชี</label><input type="text" name="accountName" class="form-control"></div>
+      <div class="col-md-3"><label>ยอดชำระ</label><input type="number" name="amount" class="form-control"></div>
+      <div class="col-md-3">
+        <label>ประเภทค่าใช้จ่าย</label>
+        <select name="expenseType" class="form-select">
+          <option value="">-- เลือกประเภท --</option>
+          <option value="ค่าสินค้า">ค่าสินค้า</option>
+          <option value="PO">PO</option>
+          <option value="ค่าใช้จ่ายทั่วไป">ค่าใช้จ่ายทั่วไป</option>
+          <option value="อื่นๆ">อื่นๆ</option>
+        </select>
+      </div>
+      <div class="col-md-6 d-none"><label>สถานะ</label><input type="text" name="status" class="form-control" ></div>
+      <!-- <div class="col-md-3"><label>ความเรียบร้อย</label><input type="text" name="completeness" class="form-control"></div>
+      <div class="col-md-3"><label>ประเภทสินทรัพย์</label><input type="text" name="assetType" class="form-control"></div>
+      <div class="col-md-9"><label>หมายเหตุ</label><input type="text" name="note" class="form-control"></div> -->
+
+      <div class="col-12">
+        <label>ไฟล์ INV PDF</label>
+        <input type="file" name="invPdf" class="form-control" accept=".pdf"/>
+      </div>
+      <div class="col-12">
+        <label>รูปภาพ INV</label>
+        <input type="file" name="invImg" class="form-control" accept="image/*"/>
+      </div>
+      <div class="col-12">
+        <label>ไฟล์ PDF บิลสำรองจ่ายโดยพนักงาน</label>
+        <input type="file" name="invPdfEmployee" class="form-control" accept=".pdf"/>
+      </div>
+      <div class="col-12">
+        <label>รูปภาพ บิลสำรองจ่ายโดยพนักงาน</label>
+        <input type="file" name="invImgEmployee" class="form-control" accept="image/*"/>
+      </div>
+
+      <div class="col-12">
+        <button type="submit" class="btn btn-success">💾 บันทึก</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- <script type="module" >
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc ,Timestamp , doc, getDoc,updateDoc  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
+      authDomain: "bill-for--vj-mart.firebaseapp.com",
+      projectId: "bill-for--vj-mart",
+      storageBucket: "bill-for--vj-mart.appspot.com",
+      messagingSenderId: "700824685931",
+      appId: "1:700824685931:web:856b3880c0496b5fd1902e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    function getDocIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("docId");
+    }
+
+
+    async function loadExpenseData(docId) {
+      if (!docId) return;
+      const docRef = doc(db, "expenses", docId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        alert("ไม่พบข้อมูลรายการนี้");
+        return;
+      }
+      const data = docSnap.data();
+
+      // แปลง timestamp
+      if (data.date?.toDate) {
+        data.date = data.date.toDate().toISOString().split("T")[0];
+      }
+      if (data.nextDate?.toDate) {
+        data.nextDate = data.nextDate.toDate().toISOString().split("T")[0];
+      }
+
+      // ✅ สำคัญ: ใส่ docId กลับเข้า form
+      document.querySelector('input[name="docId"]').value = docId;
+
+      populateForm(data);
+    }
+
+
+    function populateForm(data) {
+      const form = document.getElementById("expenseForm");
+      if (!form) return;
+
+      for (const key in data) {
+        const input = form.elements[key];
+        console.log("💡 กำลังเซ็ต item:", data.item);
+        form.elements["item"].value = data.item || "";       
+        if (input && input.type !== "file") {
+          if (data[key]?.toDate) {
+            input.value = data[key].toDate().toISOString().split("T")[0];  // แปลง timestamp เป็น date string
+          } else {
+            input.value = data[key];
+          }
+        }
+      }
+
+      // จัดการ recurringFields แสดงหรือซ่อน
+      if (data.entryType === "recurring") {
+        document.getElementById("recurringFields").classList.remove("d-none");
+      } else {
+        document.getElementById("recurringFields").classList.add("d-none");
+      }
+    }
+    window.addEventListener("DOMContentLoaded",async  () => {
+      // Step 1: โหลดข้อมูล user จาก localStorage
+      const user = JSON.parse(localStorage.getItem("user"));
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user) {
+        alert("กรุณาเข้าสู่ระบบอีกครั้ง");
+        window.location.href = "index.html"; // หรือหน้า login
+        return;
+      }
+
+      // เติมข้อมูลลงฟอร์ม
+      
+      document.querySelector('input[name="employee"]').value = user.name || "";
+      document.querySelector('input[name="role"]').value = user.role || "";
+      document.querySelector('input[name="division"]').value = user.division || "";
+      document.querySelector('input[name="company"]').value = user.company || "";
+      document.querySelector('input[name="uid"]').value = user.uid || "";
+      document.querySelector('input[name="adminleader"]').value = user.adminleader || user.name || "";
+      
+      const invPdfEmployeeInput = document.querySelector('input[name="invPdfEmployee"]');
+      const invImgEmployeeInput = document.querySelector('input[name="invImgEmployee"]');
+      const statusInput = document.querySelector('input[name="status"]');
+      const urlParams = new URLSearchParams(window.location.search);
+      const docId = urlParams.get("docId");
+      console.log("📌 docId from URL:", docId);  // เพิ่มตรงนี้
+      if (docId) {
+        const docRef = doc(db, "expenses", docId);
+        try {
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            for (const key in data) {
+              const input = document.querySelector(`[name="${key}"]`);
+              if (input && input.type !== "file") {
+                input.value = data[key];
+              }
+            }
+          } else {
+            alert("ไม่พบข้อมูลเอกสาร");
+          }
+        } catch (err) {
+          console.error("โหลดไม่สำเร็จ:", err);
+          alert("เกิดข้อผิดพลาด: " + err.message);
+        }
+        await loadExpenseData(docId);  // ✅ โหลดข้อมูลเข้า form
+      }
+      // if (docId) {
+      //   const docRef = doc(db, "expenses", docId);
+      //   try {
+      //     const snap = await getDoc(docRef);
+      //     if (snap.exists()) {
+      //       const data = snap.data();
+      //       for (const key in data) {
+      //         const input = document.querySelector(`[name="${key}"]`);
+      //         if (input && input.type !== "file") {
+      //           input.value = data[key];
+      //         }
+      //       }
+      //     } else {
+      //       alert("ไม่พบข้อมูลเอกสาร");
+      //     }
+      //   } catch (err) {
+      //     console.error("โหลดไม่สำเร็จ:", err);
+      //     alert("เกิดข้อผิดพลาด: " + err.message);
+      //   }
+      // }
+
+      function updateStatus() {
+        const hasPdf = invPdfEmployeeInput.files.length > 0;
+        const hasImg = invImgEmployeeInput.files.length > 0;
+        if (currentUser.role === "adminleader") {
+          statusInput.value = "หัวหน้าอนุมัติ";
+        }
+        else if (hasPdf || hasImg) {
+          statusInput.value = "โอนชำระโดยพนักงาน";
+        } else {
+          statusInput.value = "รอทำเบิก";
+        }
+      }
+
+      // เรียกเมื่อมีการเลือกไฟล์
+      invPdfEmployeeInput.addEventListener("change", updateStatus);
+      invImgEmployeeInput.addEventListener("change", updateStatus);
+
+      // เรียกตอนโหลดหน้าเผื่อมีการ autofill
+      updateStatus();
+      // Step 2: จัดการ dropdown entryType และ recurring fields
+      const entryTypeSelect = document.querySelector('select[name="entryType"]');
+      const recurringFields = document.getElementById("recurringFields");
+      const dateInput = document.querySelector('input[name="date"]');
+          if (dateInput) {
+            const today = new Date().toISOString().split('T')[0]; // format YYYY-MM-DD
+            dateInput.value = today;
+          }      
+
+      function toggleRecurringFields() {
+      if (entryTypeSelect.value === "recurring") {
+        recurringFields.classList.remove("d-none");
+      } else {
+        recurringFields.classList.add("d-none");
+      }
+      }
+      // เรียกตอนโหลดหน้า
+      toggleRecurringFields();
+      // เมื่อเปลี่ยนค่าใน select
+      entryTypeSelect.addEventListener("change", toggleRecurringFields);
+      // Step 3: กำหนด event submit form
+      expenseForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const docId = document.querySelector('input[name="docId"]').value?.trim() || null;
+
+        try {
+          const dataToUpdate = {};
+          for (const [key, value] of formData.entries()) {
+            if (!["invPdf", "invImg", "invPdfEmployee", "invImgEmployee"].includes(key)) {
+              dataToUpdate[key] = value;
+            }
+          }
+
+          if (docId) {
+            // ✅ อัปเดตเอกสารเดิม
+            const docRef = doc(db, "expenses", docId);
+            await updateDoc(docRef, dataToUpdate);
+          } else {
+            // ✅ เพิ่มรายการใหม่เท่านั้น ถ้ายังไม่มี docId
+            const expensesRef = collection(db, "expenses");
+            const newDocRef = await addDoc(expensesRef, {
+              ...dataToUpdate,
+              timestamp: Timestamp.now(),
+            });
+            // ตั้งค่า docId ให้ form เพื่อใช้ต่อ
+            document.querySelector('input[name="docId"]').value = newDocRef.id;
+          }
+
+          // ✅ ส่งไฟล์ไป backend
+          //const res = await fetch("/upload", {
+          //  method: "POST",
+           // body: formData,
+          //});
+          const res = await fetch("/api/expense", {
+            method: "POST",//แก้ในmac
+            body: formData,
+          });
+
+
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(text || "Upload failed");
+          }
+
+          alert("✅ บันทึกสำเร็จ!");
+          window.location.href = "dashboard.html";
+        } catch (err) {
+          alert("❌ บันทึกไม่สำเร็จ: " + err.message);
+          console.error(err);
+        }
+      });
+
+      
+        
+    });
+  </script> -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getFirestore, collection, addDoc ,Timestamp , doc, getDoc,updateDoc  } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
+      authDomain: "bill-for--vj-mart.firebaseapp.com",
+      projectId: "bill-for--vj-mart",
+      storageBucket: "bill-for--vj-mart.appspot.com",
+      messagingSenderId: "700824685931",
+      appId: "1:700824685931:web:856b3880c0496b5fd1902e"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    function getDocIdFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get("docId");
+    }
+
+    async function loadExpenseData(docId) {
+      if (!docId) return;
+      const docRef = doc(db, "expenses", docId);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        alert("ไม่พบข้อมูลรายการนี้");
+        return;
+      }
+      const data = docSnap.data();
+
+      if (data.date?.toDate) {
+        data.date = data.date.toDate().toISOString().split("T")[0];
+      }
+      if (data.nextDate?.toDate) {
+        data.nextDate = data.nextDate.toDate().toISOString().split("T")[0];
+      }
+
+      document.querySelector('input[name="docId"]').value = docId;
+      populateForm(data);
+    }
+
+    function populateForm(data) {
+      const form = document.getElementById("expenseForm");
+      if (!form) return;
+
+      for (const key in data) {
+        const input = form.elements[key];
+        form.elements["item"].value = data.item || "";
+        if (input && input.type !== "file") {
+          if (data[key]?.toDate) {
+            input.value = data[key].toDate().toISOString().split("T")[0];
+          } else {
+            input.value = data[key];
+          }
+        }
+      }
+
+      if (data.entryType === "recurring") {
+        document.getElementById("recurringFields").classList.remove("d-none");
+      } else {
+        document.getElementById("recurringFields").classList.add("d-none");
+      }
+    }
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      const user = JSON.parse(localStorage.getItem("user"));
+      const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+      if (!user) {
+        alert("กรุณาเข้าสู่ระบบอีกครั้ง");
+        window.location.href = "index.html";
+        return;
+      }
+
+      document.querySelector('input[name="employee"]').value = user.name || "";
+      document.querySelector('input[name="role"]').value = user.role || "";
+      document.querySelector('input[name="division"]').value = user.division || "";
+      document.querySelector('input[name="uid"]').value = user.uid || "";
+      document.querySelector('input[name="company"]').value = user.company || "";
+      document.querySelector('input[name="adminleader"]').value = user.adminleader || user.name || "";
+
+      const invPdfEmployeeInput = document.querySelector('input[name="invPdfEmployee"]');
+      const invImgEmployeeInput = document.querySelector('input[name="invImgEmployee"]');
+      const statusInput = document.querySelector('input[name="status"]');
+      const urlParams = new URLSearchParams(window.location.search);
+      const docId = urlParams.get("docId");
+
+      if (docId) {
+        const docRef = doc(db, "expenses", docId);
+        try {
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            const data = snap.data();
+            for (const key in data) {
+              const input = document.querySelector(`[name="${key}"]`);
+              if (input && input.type !== "file") {
+                input.value = data[key];
+              }
+            }
+          } else {
+            alert("ไม่พบข้อมูลเอกสาร");
+          }
+        } catch (err) {
+          console.error("โหลดไม่สำเร็จ:", err);
+          alert("เกิดข้อผิดพลาด: " + err.message);
+        }
+        await loadExpenseData(docId);
+      }
+
+      function updateStatus() {
+        const hasPdf = invPdfEmployeeInput.files.length > 0;
+        const hasImg = invImgEmployeeInput.files.length > 0;
+        if (currentUser.role === "adminleader") {
+          statusInput.value = "หัวหน้าอนุมัติ";
+        } else if (hasPdf || hasImg) {
+          statusInput.value = "โอนชำระโดยพนักงาน";
+        } else {
+          statusInput.value = "รอทำเบิก";
+        }
+      }
+
+      invPdfEmployeeInput.addEventListener("change", updateStatus);
+      invImgEmployeeInput.addEventListener("change", updateStatus);
+      updateStatus();
+
+      const entryTypeSelect = document.querySelector('select[name="entryType"]');
+      const recurringFields = document.getElementById("recurringFields");
+      const dateInput = document.querySelector('input[name="date"]');
+      if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+      }
+
+      function toggleRecurringFields() {
+        if (entryTypeSelect.value === "recurring") {
+          recurringFields.classList.remove("d-none");
+        } else {
+          recurringFields.classList.add("d-none");
+        }
+      }
+      toggleRecurringFields();
+      entryTypeSelect.addEventListener("change", toggleRecurringFields);
+      expenseForm.addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const docId = document.querySelector('input[name="docId"]').value?.trim() || null;
+
+        try {
+          const dataToUpdate = {};
+          for (const [key, value] of formData.entries()) {
+            if (!["invPdf", "invImg", "invPdfEmployee", "invImgEmployee"].includes(key)) {
+              dataToUpdate[key] = value;
+            }
+          }
+
+          const entryType = formData.get("entryType");
+          const collectionName = (entryType === "recurring") ? "recurring" : "expenses";
+
+          // ถ้า recurring → คำนวณวันที่ nextDate
+          if (entryType === "recurring") {
+            const frequency = parseInt(formData.get("frequency") || "0");
+            const unit = formData.get("frequencyUnit");
+            const today = new Date();
+            let next = new Date(today);
+
+            if (unit === "days") next.setDate(today.getDate() + frequency);
+            else if (unit === "weeks") next.setDate(today.getDate() + frequency * 7);
+            else if (unit === "months") next.setMonth(today.getMonth() + frequency);
+            else if (unit === "years") next.setFullYear(today.getFullYear() + frequency);
+
+            dataToUpdate.nextDate = next.toISOString().split("T")[0];
+          }
+
+          let finalDocId = docId;
+
+          // 🧾 ถ้ายังไม่มี docId → ให้สร้างเอกสารใหม่ใน Firestore
+          if (!finalDocId) {
+            const collectionRef = collection(db, collectionName);
+            const newDocRef = await addDoc(collectionRef, {
+              ...dataToUpdate,
+              timestamp: Timestamp.now(),
+            });
+            finalDocId = newDocRef.id;
+            
+          } 
+          if (finalDocId) {
+            const docRef = doc(db, collectionName, finalDocId);
+            console.log("📄 ตรวจสอบ docRef:", docRef.path);
+
+            // 🟡 ดึงข้อมูลเดิมก่อน
+            const docSnap = await getDoc(docRef);
+            let existingData = {};
+            if (docSnap.exists()) {
+              existingData = docSnap.data();
+              console.log("📥 ข้อมูลเดิมจาก Firestore:", existingData);
+            } else {
+              console.log("⚠️ ไม่พบเอกสารเดิม (อาจเป็นเอกสารใหม่)");
+            }
+
+            // 🟡 ใส่ URL เดิมกลับเข้ามา ถ้ายังไม่มีข้อมูลใหม่
+            const fileKeys = ["invPdfUrl", "invImgUrl", "invPdfEmployeeUrl", "invImgEmployeeUrl"];
+            fileKeys.forEach((key) => {
+              if (!(key in dataToUpdate) && key in existingData) {
+                dataToUpdate[key] = existingData[key];
+                console.log(`🔁 ใส่ URL เดิมกลับ: ${key} = ${existingData[key]}`);
+              }
+            });
+          }
+
+          console.log("📤 ส่งฟอร์มไปยัง /upload พร้อม docId:", finalDocId);
+          formData.append("docId", finalDocId);
+
+          const res = await fetch("/upload", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            const text = await res.text();
+            console.error("❌ Upload failed:", text);
+            throw new Error(text || "Upload failed");
+          }
+
+          const uploadedUrls = await res.json(); // ← { invPdfUrl, invImgUrl, ... }
+          console.log("✅ ได้รับ URL จาก backend:", uploadedUrls);
+
+          // 🟢 รวม URL ที่ upload มาเข้าไปด้วย
+          Object.assign(dataToUpdate, uploadedUrls);
+          console.log("🧾 ข้อมูลที่จะบันทึกลง Firestore:", dataToUpdate);
+
+          // ✅ อัปเดตเอกสาร Firestore
+          await updateDoc(doc(db, collectionName, finalDocId), dataToUpdate);
+          console.log("✅ อัปเดตเอกสารเรียบร้อย:", finalDocId);
+
+          alert("✅ บันทึกสำเร็จ!");
+          window.location.href = "dashboard.html";
+
+
+        } catch (err) {
+          alert("❌ บันทึกไม่สำเร็จ: " + err.message);
+          console.error(err);
+        }
+      });
+
+
+      // expenseForm.addEventListener("submit", async function (e) {
+      //   e.preventDefault();
+
+      //   const formData = new FormData(this);
+      //   const docId = document.querySelector('input[name="docId"]').value?.trim() || null;
+
+      //   try {
+      //     const dataToUpdate = {};
+      //     for (const [key, value] of formData.entries()) {
+      //       if (!["invPdf", "invImg", "invPdfEmployee", "invImgEmployee"].includes(key)) {
+      //         dataToUpdate[key] = value;
+      //       }
+      //     }
+
+      //     const entryType = formData.get("entryType");
+      //     const collectionName = (entryType === "recurring") ? "recurring" : "expenses";
+
+      //     if (entryType === "recurring") {
+      //       const frequency = parseInt(formData.get("frequency") || "0");
+      //       const unit = formData.get("frequencyUnit");
+      //       const today = new Date();
+      //       let next = new Date(today);
+
+      //       if (unit === "days") next.setDate(today.getDate() + frequency);
+      //       else if (unit === "weeks") next.setDate(today.getDate() + frequency * 7);
+      //       else if (unit === "months") next.setMonth(today.getMonth() + frequency);
+      //       else if (unit === "years") next.setFullYear(today.getFullYear() + frequency);
+
+      //       dataToUpdate.nextDate = next.toISOString().split("T")[0];
+      //     }
+
+      //     if (docId) {
+      //       const docRef = doc(db, collectionName, docId);
+      //       await updateDoc(docRef, dataToUpdate);
+      //     } else {
+      //       const collectionRef = collection(db, collectionName);
+      //       const newDocRef = await addDoc(collectionRef, {
+      //         ...dataToUpdate,
+      //         timestamp: Timestamp.now(),
+      //       });
+      //       document.querySelector('input[name="docId"]').value = newDocRef.id;
+      //     }
+
+      //     const res = await fetch("/upload", {
+      //      method: "POST",
+      //      body: formData,
+      //     });
+      //     // const res = await fetch("/api/expense", {
+      //     //             method: "POST",//แก้ในmac
+      //     //             body: formData,
+      //     //           });
+      //     if (!res.ok) {
+      //       const text = await res.text();
+      //       throw new Error(text || "Upload failed");
+      //     }
+
+      //     alert("✅ บันทึกสำเร็จ!");
+      //     window.location.href = "dashboard.html";
+      //   } catch (err) {
+      //     alert("❌ บันทึกไม่สำเร็จ: " + err.message);
+      //     console.error(err);
+      //   }
+      // });
+    });
+    </script>
+
+
+
+</body>
+</html>
+

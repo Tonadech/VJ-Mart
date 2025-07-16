@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>HR Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    #logoutBtn {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #d9534f;
+      color: white;
+      font-weight: 600;
+      user-select: none;
+      box-shadow: 0 2px 4px rgb(217 83 79 / 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div class="container py-4">
+    <h3><i class="bi bi-person-gear"></i> HR Dashboard</h3>
+    <button id="logoutBtn" class="btn delete" onclick="logoutUser()">Logout</button>
+    <!-- Company Section (VJ only) -->
+    <div id="companySection" class="card p-3 mb-4 d-none">
+      <h5>สร้างบริษัท</h5>
+      <form id="companyForm" class="row g-2">
+        <div class="col-md-8">
+          <input name="companyName" class="form-control" placeholder="ชื่อบริษัท" required>
+        </div>
+        <div class="col-md-4 d-flex">
+          <button class="btn btn-dark w-100"><i class="bi bi-plus-circle"></i> เพิ่มบริษัท</button>
+        </div>
+      </form>
+      <div class="mt-2 row">
+        <div class="col-md-8">
+          <select id="companyList" class="form-select"></select>
+        </div>
+        <div class="col-md-4">
+          <button id="deleteCompanyBtn" class="btn btn-outline-danger w-100"><i class="bi bi-trash"></i> ลบบริษัท</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Division Section -->
+    <div class="card p-3 mb-4">
+      <h5>เพิ่มแผนก</h5>
+      <form id="divisionForm" class="row g-2">
+        <!-- ถ้าเป็น vj ให้แสดง dropdown เลือกบริษัท -->
+        <div id="divisionCompanyGroup" class="col-md-6 d-none">
+          <select id="divisionCompanySelect" name="divisionCompany" class="form-select" required>
+            <option value="">-- เลือกบริษัท --</option>
+          </select>
+        </div>
+        <div class="col-md-8">
+          <input name="divisionName" class="form-control" placeholder="ชื่อแผนก" required>
+        </div>
+        <div class="col-md-4">
+          <button class="btn btn-success w-100"><i class="bi bi-plus-lg"></i> เพิ่มแผนก</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- User Form -->
+    <div class="card p-3 mb-4">
+      <h5>เพิ่มผู้ใช้งาน</h5>
+      <form id="userForm" class="row g-2">
+        <div class="col-md-4"><input name="name" class="form-control" placeholder="ชื่อพนักงาน" required></div>
+        <div class="col-md-4"><input name="email" type="email" class="form-control" placeholder="อีเมล" required></div>
+        <div class="col-md-4"><input name="password" type="password" class="form-control" placeholder="รหัสผ่าน" required></div>
+        <!-- ถ้าเป็น vj ให้แสดง dropdown เลือกบริษัท -->
+        <div class="col-md-4 d-none" id="userCompanyGroup">
+          <select name="userCompany" id="userCompanySelect" class="form-select">
+            <option value="">-- เลือกบริษัท --</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <select name="division" id="divisionSelect" class="form-select" required>
+            <option value="">-- เลือกแผนก --</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <select name="role" id="role" class="form-select" required>
+            <option value="">-- เลือกบทบาท --</option>
+            <option value="admin">Admin</option>
+            <option value="adminleader">Admin Leader</option>
+            <option value="accountor">Accountor</option>
+          </select>
+        </div>
+        <div id="adminLeaderGroup" class="col-md-12 d-none">
+          <select name="adminleader" id="adminLeaderSelect" class="form-select">
+            <option value="">-- เลือกหัวหน้า --</option>
+          </select>
+        </div>
+        <div class="col-md-12">
+          <button class="btn btn-primary w-100"><i class="bi bi-person-plus"></i> เพิ่มผู้ใช้งาน</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Filter -->
+    <div class="input-group mb-3">
+      <span class="input-group-text"><i class="bi bi-search"></i></span>
+      <input id="filterInput" class="form-control" placeholder="ค้นหาชื่อ/อีเมล/แผนก">
+    </div>
+
+    <!-- User Table -->
+    <div class="card p-3">
+      <h5>รายชื่อผู้ใช้งาน</h5>
+      <div class="table-responsive">
+        <table class="table table-bordered" id="userTable">
+          <thead class="table-light">
+            <tr>
+              <th>UID</th>
+              <th>ชื่อ</th>
+              <th>อีเมล</th>
+              <th>แผนก</th>
+              <th>บทบาท</th>
+              <th>บริษัท</th>
+              <th>AdminLeader</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <!-- MOCK LOGIN BUTTON -->
+    <div class="mb-3">
+    <button class="btn btn-outline-primary me-2" onclick="mockLogin('vj')">🔐 Mock Login as VJ</button>
+    <button class="btn btn-outline-secondary" onclick="mockLogin('hr')">🔐 Mock Login as HR</button>
+    </div>
+
+
+  <script type="module" src="js/hrDashboard.js"></script>
+</body>
+</html>
+
+
+
