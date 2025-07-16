@@ -27,6 +27,16 @@ function Dashboard() {
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [lightboxImg, setLightboxImg] = useState(null);
 
+  const statusList = [
+    { label: "⏳ รอทำเบิก", value: "รอทำเบิก", color: "#757575" },
+    { label: "✅ หัวหน้าอนุมัติ", value: "หัวหน้าอนุมัติ", color: "#2979ff" },
+    { label: "🔍 ตรวจสอบแล้ว", value: "ตรวจสอบแล้ว", color: "#43a047" },
+    { label: "❌ ไม่เรียบร้อย", value: "ไม่เรียบร้อย", color: "#29b6f6" },
+    { label: "✅ ส่งให้ลูกค้าแล้ว", value: "ส่งให้ลูกค้าแล้ว", color: "#43a047" },
+    { label: "❌ ยกเลิก", value: "ยกเลิก", color: "#e53935" }
+  ];
+  const [selectedStatus, setSelectedStatus] = useState(null);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser) {
@@ -84,12 +94,19 @@ function Dashboard() {
     setLightboxImg(null);
   };
 
+  // Count for each status
+  const statusCount = statusList.reduce((acc, s) => {
+    acc[s.value] = expenses.filter(e => e.status === s.value).length;
+    return acc;
+  }, {});
+
   return (
     <div>
       {/* Top Navigation Bar */}
       <header className="main-header">
         <div className="header-left">
-          <img src="/img/logo.png" alt="Company Logo" className="logo" />
+          {/* Replace logo image with VJ MART text */}
+          <span style={{ fontWeight: 900, fontSize: 36, color: '#1976d2', letterSpacing: 2 }}>VJ MART</span>
           <h1>ระบบจัดการรายจ่าย</h1>
         </div>
         <div className="header-right">
@@ -102,8 +119,27 @@ function Dashboard() {
 
       {/* Status Summary Panel */}
       <section className="status-container">
-        <div id="status-summary" className="status-summary">
-          {/* TODO: Status summary goes here */}
+        <div id="status-summary" className="status-summary" style={{ display: "flex", gap: 16 }}>
+          {statusList.map(status => (
+            <div
+              key={status.value}
+              style={{
+                background: status.color,
+                color: "#fff",
+                borderRadius: 16,
+                padding: 20,
+                minWidth: 150,
+                textAlign: "center",
+                cursor: "pointer",
+                border: selectedStatus === status.value ? "4px solid #222" : "none",
+                boxShadow: selectedStatus === status.value ? "0 0 10px #222" : "none"
+              }}
+              onClick={() => setSelectedStatus(selectedStatus === status.value ? null : status.value)}
+            >
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{status.label}</div>
+              <div style={{ fontSize: 28, fontWeight: 700 }}>{statusCount[status.value] || 0}</div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -125,10 +161,10 @@ function Dashboard() {
               <p>กำลังโหลดข้อมูล...</p>
             ) : error ? (
               <p className="text-danger">{error}</p>
-            ) : expenses.length === 0 ? (
+            ) : (selectedStatus ? expenses.filter(e => e.status === selectedStatus) : expenses).length === 0 ? (
               <p>ไม่มีข้อมูล</p>
             ) : (
-              expenses.map(item => (
+              (selectedStatus ? expenses.filter(e => e.status === selectedStatus) : expenses).map(item => (
                 <div key={item.id} className="item" onClick={() => handleItemClick(item)}>
                   {item.item} - {item.amount} บาท
                 </div>
