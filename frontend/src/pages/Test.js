@@ -42,16 +42,17 @@ function Test() {
   };
   const loadDivisions = async () => {
     const snap = await getDocs(collection(db, "divisions"));
-    setDivisions(snap.docs.map(doc => doc.data().name));
+    setDivisions(snap.docs.map(doc => ({ name: doc.data().name, company: doc.data().company })));
   };
   const loadUsers = async () => {
     const snap = await getDocs(collection(db, "users"));
     setUsers(snap.docs.map(d => ({ uid: d.id, ...d.data() })));
   };
   const loadAdminLeadersByDivision = async (division) => {
+    // Load adminleaders for the selected division, including company
     const q = query(collection(db, "users"), where("role", "==", "adminleader"), where("division", "==", division));
     const querySnapshot = await getDocs(q);
-    setAdminLeaders(querySnapshot.docs.map(doc => doc.data().name));
+    setAdminLeaders(querySnapshot.docs.map(doc => ({ name: doc.data().name, company: doc.data().company, division: doc.data().division })));
   };
 
   const handleCompanySubmit = async (e) => {
@@ -134,6 +135,10 @@ function Test() {
     u.email?.toLowerCase().includes(filter.toLowerCase()) ||
     u.division?.toLowerCase().includes(filter.toLowerCase())
   );
+  // Filter divisions for selected company
+  const filteredDivisions = divisions.filter(d => d.company === userForm.userCompany);
+  // Filter adminLeaders for the selected company and division
+  const filteredAdminLeaders = adminLeaders.filter(a => a.company === userForm.userCompany && a.division === userForm.division);
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -214,7 +219,9 @@ function Test() {
           <div className="col-md-6">
             <select name="division" id="divisionSelect" className="form-select" required value={userForm.division} onChange={handleUserFormChange}>
               <option value="">-- เลือกแผนก --</option>
-              {divisions.map(d => <option key={d} value={d}>{d}</option>)}
+              {filteredDivisions.map(d => (
+                <option key={d.name} value={d.name}>{d.name}</option>
+              ))}
             </select>
           </div>
           <div className="col-md-6">
@@ -227,9 +234,18 @@ function Test() {
           </div>
           {userForm.role === "admin" && (
             <div className="col-md-12">
-              <select name="adminleader" id="adminLeaderSelect" className="form-select" value={userForm.adminleader} onChange={handleUserFormChange}>
+              <select
+                name="adminleader"
+                id="adminLeaderSelect"
+                className="form-select"
+                value={userForm.adminleader}
+                onChange={handleUserFormChange}
+                required
+              >
                 <option value="">-- เลือกหัวหน้า --</option>
-                {adminLeaders.map(a => <option key={a} value={a}>{a}</option>)}
+                {filteredAdminLeaders.map(a => (
+                  <option key={a.name} value={a.name}>{a.name}</option>
+                ))}
               </select>
             </div>
           )}

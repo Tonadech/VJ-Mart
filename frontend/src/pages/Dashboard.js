@@ -26,6 +26,7 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [selectedExpense, setSelectedExpense] = useState(null);
   const [lightboxImg, setLightboxImg] = useState(null);
+  const [entryTypeFilter, setEntryTypeFilter] = useState("expense");
 
   const statusList = [
     { label: "⏳ รอทำเบิก", value: "รอทำเบิก", color: "#757575" },
@@ -47,14 +48,23 @@ function Dashboard() {
         const userSnap = await getDoc(doc(db, "users", firebaseUser.uid));
         const userData = userSnap.data();
         setUser(userData);
-        // Query expenses based on role
         let q;
         if (userData.role === "admin") {
+          // admin เห็นแต่ของตัวเอง
           q = query(collection(db, "expenses"), where("uid", "==", firebaseUser.uid));
         } else if (userData.role === "adminleader") {
-          q = query(collection(db, "expenses"), where("adminleader", "==", userData.name), where("company", "==", userData.company));
+          // adminleader เห็นของตัวเองและ admin ที่ adminleader เป็นหัวหน้า
+          q = query(
+            collection(db, "expenses"),
+            where("adminleader", "==", userData.name),
+            where("company", "==", userData.company)
+          );
         } else if (userData.role === "accountor") {
-          q = query(collection(db, "expenses"), where("division", "==", userData.division), where("company", "==", userData.company));
+          // accountor เห็นทั้ง company
+          q = query(
+            collection(db, "expenses"),
+            where("company", "==", userData.company)
+          );
         } else {
           setError("บทบาทไม่ถูกต้อง");
           setLoading(false);
@@ -100,14 +110,27 @@ function Dashboard() {
     return acc;
   }, {});
 
+  // Filter expenses by entryType and selectedStatus
+  const filteredExpenses = expenses.filter(e => e.entryType === entryTypeFilter && (!selectedStatus || e.status === selectedStatus));
+
   return (
     <div>
       {/* Top Navigation Bar */}
       <header className="main-header">
-        <div className="header-left">
-          {/* Replace logo image with VJ MART text */}
-          <span style={{ fontWeight: 900, fontSize: 36, color: '#1976d2', letterSpacing: 2 }}>VJ MART</span>
-          <h1>ระบบจัดการรายจ่าย</h1>
+        <div className="header-left" style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          {/* Beautiful VJ MART logo text */}
+          <span style={{
+            fontWeight: 900,
+            fontSize: 40,
+            color: '#1565c0',
+            letterSpacing: 5,
+            fontFamily: 'Segoe UI, Arial, sans-serif',
+            textShadow: '1px 2px 8px rgba(21,101,192,0.10)',
+            padding: '8px 24px 8px 0',
+            borderRadius: 12,
+            background: 'linear-gradient(90deg,rgb(218, 228, 235) 60%, #fff 100%)'
+          }}>VJ MART</span>
+          <h1 style={{ fontSize: 28, fontWeight: 700, margin: 10, color: '#222', letterSpacing: 3 }}>ระบบจัดการรายจ่าย</h1>
         </div>
         <div className="header-right">
           <div className="welcome-text" id="welcomeText">
@@ -149,7 +172,12 @@ function Dashboard() {
         <aside id="left-panel">
           <div className="mb-2">
             <label htmlFor="entryTypeFilter"><strong>🔍 ประเภท:</strong></label>
-            <select id="entryTypeFilter" className="form-select">
+            <select
+              id="entryTypeFilter"
+              className="form-select"
+              value={entryTypeFilter}
+              onChange={e => setEntryTypeFilter(e.target.value)}
+            >
               <option value="expense">📌 รายการปกติ</option>
               <option value="recurring">🔁 Recurring</option>
             </select>
@@ -161,10 +189,10 @@ function Dashboard() {
               <p>กำลังโหลดข้อมูล...</p>
             ) : error ? (
               <p className="text-danger">{error}</p>
-            ) : (selectedStatus ? expenses.filter(e => e.status === selectedStatus) : expenses).length === 0 ? (
+            ) : filteredExpenses.length === 0 ? (
               <p>ไม่มีข้อมูล</p>
             ) : (
-              (selectedStatus ? expenses.filter(e => e.status === selectedStatus) : expenses).map(item => (
+              filteredExpenses.map(item => (
                 <div key={item.id} className="item" onClick={() => handleItemClick(item)}>
                   {item.item} - {item.amount} บาท
                 </div>
