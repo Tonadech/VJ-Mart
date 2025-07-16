@@ -36,6 +36,12 @@ function Test() {
     loadUsers();
   }, []);
 
+  useEffect(() => {
+    if (userForm.role === "hr" && userForm.division) {
+      setUserForm(f => ({ ...f, division: "" }));
+    }
+  }, [userForm.role]);
+
   const loadCompanies = async () => {
     const snap = await getDocs(collection(db, "companies"));
     setCompanies(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -217,7 +223,15 @@ function Test() {
             </select>
           </div>
           <div className="col-md-6">
-            <select name="division" id="divisionSelect" className="form-select" required value={userForm.division} onChange={handleUserFormChange}>
+            <select
+              name="division"
+              id="divisionSelect"
+              className="form-select"
+              required={userForm.role !== "hr"}
+              value={userForm.division}
+              onChange={handleUserFormChange}
+              disabled={userForm.role === "hr"}
+            >
               <option value="">-- เลือกแผนก --</option>
               {filteredDivisions.map(d => (
                 <option key={d.name} value={d.name}>{d.name}</option>
@@ -230,6 +244,7 @@ function Test() {
               <option value="admin">Admin</option>
               <option value="adminleader">Admin Leader</option>
               <option value="accountor">Accountor</option>
+              <option value="hr">HR</option>
             </select>
           </div>
           {userForm.role === "admin" && (
