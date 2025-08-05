@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { getFirestore, doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { useNavigate } from "react-router-dom";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
@@ -26,11 +27,12 @@ function CheckForm() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [docId, setDocId] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Get docId from URL
+    // Get id from URL
     const params = new URLSearchParams(window.location.search);
-    const id = params.get("docId");
+    const id = params.get("id");
     setDocId(id);
     if (id) {
       loadExpenseData(id);
@@ -76,6 +78,20 @@ function CheckForm() {
     setError("");
     setSuccess("");
     try {
+      if (completeness === "เรียบร้อย") {
+        if (!checkpdf && !checkimg) {
+          setError("กรุณาแนบไฟล์ PDF หรือรูปภาพอย่างน้อย 1 อย่าง");
+          setLoading(false);
+          return;
+        }
+      }
+      if (completeness === "ไม่เรียบร้อย") {
+        if (!note.trim()) {
+          setError("กรุณากรอกหมายเหตุ");
+          setLoading(false);
+          return;
+        }
+      }
       let checkpdfUrl = "";
       let checkimgUrl = "";
       if (completeness === "เรียบร้อย") {
@@ -93,6 +109,7 @@ function CheckForm() {
       await updateDoc(doc(db, "expenses", docId), updateData);
       setSuccess("บันทึกข้อมูลสำเร็จ!");
       setCheckpdf(null); setCheckimg(null); setNote("");
+      setTimeout(() => navigate('/dashboard'), 1000);
     } catch (err) {
       setError("เกิดข้อผิดพลาด: " + err.message);
     } finally {

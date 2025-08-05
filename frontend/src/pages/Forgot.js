@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { initializeApp, getApps } from "firebase/app";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import "./Forgot.css";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBcL-j2Em-8q0Wvg-flOTssxQT4XlWqXzE",
@@ -26,10 +27,23 @@ function Forgot() {
     setError("");
     setSuccess("");
     try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccess("ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว!");
+      await sendPasswordResetEmail(auth, email, {
+        url: window.location.origin + '/reset',
+        handleCodeInApp: true
+      });
+      setSuccess("ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว! กรุณาตรวจสอบอีเมล (รวมถึง Spam/Junk folder) และคลิกลิงก์เพื่อรีเซ็ตรหัสผ่าน");
+      console.log("Password reset email sent to:", email);
     } catch (err) {
-      setError("เกิดข้อผิดพลาด: " + err.message);
+      console.error("Password reset error:", err);
+      if (err.code === 'auth/user-not-found') {
+        setError("ไม่พบอีเมลนี้ในระบบ กรุณาตรวจสอบอีเมลอีกครั้ง");
+      } else if (err.code === 'auth/invalid-email') {
+        setError("รูปแบบอีเมลไม่ถูกต้อง กรุณาตรวจสอบอีเมลอีกครั้ง");
+      } else if (err.code === 'auth/too-many-requests') {
+        setError("มีการขอรีเซ็ตรหัสผ่านบ่อยเกินไป กรุณารอสักครู่แล้วลองใหม่");
+      } else {
+        setError("เกิดข้อผิดพลาด: " + err.message + " (Code: " + err.code + ")");
+      }
     } finally {
       setLoading(false);
     }
@@ -41,36 +55,44 @@ function Forgot() {
         <div className="row justify-content-sm-center h-100">
           <div className="col-xxl-4 col-xl-5 col-lg-5 col-md-7 col-sm-9">
             <div className="text-center my-5">
-              <img src="https://getbootstrap.com/docs/5.0/assets/brand/bootstrap-logo.svg" alt="logo" width="100" />
+              <img src="/logo192.png" alt="VJ Mart Logo" width="100" />
             </div>
             <div className="card shadow-lg">
               <div className="card-body p-5">
-                <h1 className="fs-4 card-title fw-bold mb-4">Forgot Password</h1>
+                <h1 className="fs-4 card-title fw-bold mb-4">ลืมรหัสผ่าน</h1>
                 {success && <div className="alert alert-success">{success}</div>}
                 {error && <div className="alert alert-danger">{error}</div>}
+                <div className="alert alert-info">
+                  <strong>หมายเหตุ:</strong> หากไม่ได้รับอีเมล กรุณาตรวจสอบ:
+                  <ul className="mb-0 mt-2">
+                    <li>Spam/Junk folder</li>
+                    <li>อีเมลที่ใช้ต้องเป็นอีเมลที่ลงทะเบียนในระบบ</li>
+                    <li>ตรวจสอบการตั้งค่า Firewall หรือ Antivirus</li>
+                  </ul>
+                </div>
                 <form className="needs-validation" noValidate autoComplete="off" onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label className="mb-2 text-muted" htmlFor="email">E-Mail Address</label>
+                    <label className="mb-2 text-muted" htmlFor="email">อีเมล</label>
                     <input id="email" type="email" className="form-control" name="email" required autoFocus value={email} onChange={e => setEmail(e.target.value)} />
                     <div className="invalid-feedback">
-                      Email is invalid
+                      กรุณากรอกอีเมลที่ถูกต้อง
                     </div>
                   </div>
                   <div className="d-flex align-items-center">
                     <button type="submit" className="btn btn-primary ms-auto" disabled={loading}>
-                      {loading ? "Sending..." : "Send Link"}
+                      {loading ? "กำลังส่ง..." : "ส่งลิงก์รีเซ็ต"}
                     </button>
                   </div>
                 </form>
               </div>
               <div className="card-footer py-3 border-0">
                 <div className="text-center">
-                  Remember your password? <a href="/" className="text-dark">Login</a>
+                  จำรหัสผ่านได้แล้ว? <a href="/" className="text-dark">เข้าสู่ระบบ</a>
                 </div>
               </div>
             </div>
             <div className="text-center mt-5 text-muted">
-              Copyright &copy; 2017-2021 &mdash; Your Company
+              Copyright &copy; 2024 &mdash; VJ Mart
             </div>
           </div>
         </div>

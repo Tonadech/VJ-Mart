@@ -21,6 +21,8 @@ function Form() {
   const navigate = useNavigate();
   const location = useLocation();
   const [editId, setEditId] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [originalStatus, setOriginalStatus] = useState("");
   const [form, setForm] = useState({
     entryType: "expense",
     item: "",
@@ -70,13 +72,22 @@ function Form() {
     // Check for edit mode
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
+    const editMode = params.get("edit") === "true";
+    
     if (id) {
       setEditId(id);
+      setIsEditMode(editMode);
       // Load expense data
       getDoc(doc(db, "expenses", id)).then(docSnap => {
         if (docSnap.exists()) {
           const data = docSnap.data();
-          setForm(f => ({ ...f, ...data, date: data.date && data.date.toDate ? data.date.toDate().toISOString().slice(0,10) : "" }));
+          setOriginalStatus(data.status || "");
+          setForm(f => ({ 
+            ...f, 
+            ...data, 
+            date: data.date && data.date.toDate ? data.date.toDate().toISOString().slice(0,10) : "",
+            nextDate: data.nextDate && data.nextDate.toDate ? data.nextDate.toDate().toISOString().slice(0,10) : ""
+          }));
         }
       });
     }
@@ -117,36 +128,151 @@ function Form() {
       const invPdfEmployeeUrl = await uploadFile(invPdfEmployee, "inv-employee-pdf");
       const invImgEmployeeUrl = await uploadFile(invImgEmployee, "inv-employee-img");
       let status = form.status;
-      if (
+      let nextDate = form.nextDate;
+      
+      // If admin is editing, keep original status
+      if (isEditMode && user.role === "admin") {
+        status = originalStatus;
+      } else if (
         user.role === "admin" &&
         (invPdfEmployee || invImgEmployee)
       ) {
         status = "โอนชำระโดยพนักงาน";
       }
-      // If editing and adminleader, set status to 'หัวหน้าอนุมัติ'
-      if (editId && user.role === "adminleader") {
-        // เตรียมข้อมูลที่จะอัปเดต
-        const updatePayload = {
+      // If adminleader (new or editing), set status to 'หัวหน้าอนุมัติ'
+      if (user.role === "adminleader") {
+        status = "หัวหน้าอนุมัติ";
+      }
+              // If editing and adminleader, set status to 'หัวหน้าอนุมัติ'
+        if (editId && user.role === "adminleader") {
+          // เตรียมข้อมูลที่จะอัปเดต
+          const updatePayload = {
+            ...form,
+            invPdfUrl: invPdfUrl || form.invPdfUrl,
+            invImgUrl: invImgUrl || form.invImgUrl,
+            invPdfEmployeeUrl: invPdfEmployeeUrl || form.invPdfEmployeeUrl,
+            invImgEmployeeUrl: invImgEmployeeUrl || form.invImgEmployeeUrl,
+            status: "หัวหน้าอนุมัติ",
+            date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
+            nextDate: form.nextDate ? Timestamp.fromDate(new Date(form.nextDate)) : "",
+          };
+          // ลบ field ที่เป็น undefined ออกจาก updatePayload
+          Object.keys(updatePayload).forEach(key => {
+            if (updatePayload[key] === undefined) delete updatePayload[key];
+          });
+          await updateDoc(doc(db, "expenses", editId), updatePayload);
+          setSuccess("อัปเดตรายการสำเร็จ!");
+          setTimeout(() => navigate('/dashboard'), 1000);
+          setLoading(false);
+          return;
+        }
+        
+        // If admin is editing, update with status change if files are uploaded
+        if (editId && isEditMode && user.role === "admin") {
+          // ตรวจสอบว่ามีการอัพโหลดไฟล์บิลสำรองจ่ายโดยพนักงานหรือไม่
+          let newStatus = originalStatus;
+          if (originalStatus === "รอทำเบิก" && (invPdfEmployee || invImgEmployee)) {
+            newStatus = "โอนชำระโดยพนักงาน";
+          }
+          
+          // เตรียมข้อมูลที่จะอัปเดต
+          const updatePayload = {
+            ...form,
+            invPdfUrl: invPdfUrl || form.invPdfUrl,
+            invImgUrl: invImgUrl || form.invImgUrl,
+            invPdfEmployeeUrl: invPdfEmployeeUrl || form.invPdfEmployeeUrl,
+            invImgEmployeeUrl: invImgEmployeeUrl || form.invImgEmployeeUrl,
+            status: newStatus, // ใช้สถานะใหม่
+            date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
+            nextDate: form.nextDate ? Timestamp.fromDate(new Date(form.nextDate)) : "",
+          };
+          // ลบ field ที่เป็น undefined ออกจาก updatePayload
+          Object.keys(updatePayload).forEach(key => {
+            if (updatePayload[key] === undefined) delete updatePayload[key];
+          });
+          await updateDoc(doc(db, "expenses", editId), updatePayload);
+          setSuccess("อัปเดตรายการสำเร็จ!");
+          setTimeout(() => navigate('/dashboard'), 1000);
+          setLoading(false);
+          return;
+        }
+      // Add new document as before
+      let targetCollection = "expenses";
+      let expenseStatus = status; // สถานะสำหรับรายการปกติ
+      
+      if (form.entryType === "recurring") {
+        // คำนวณ nextDate อัตโนมัติ
+        const baseDate = form.date ? new Date(form.date) : new Date();
+        let freq = parseInt(form.frequency, 10) || 1;
+        let next = new Date(baseDate);
+        switch (form.frequencyUnit) {
+          case "days":
+            next.setDate(next.getDate() + freq);
+            break;
+          case "weeks":
+            next.setDate(next.getDate() + freq * 7);
+            break;
+          case "months":
+            next.setMonth(next.getMonth() + freq);
+            break;
+          case "years":
+            next.setFullYear(next.getFullYear() + freq);
+            break;
+          default:
+            break;
+        }
+        nextDate = next;
+        
+        // บันทึก recurring
+        const recurringData = {
           ...form,
-          invPdfUrl: invPdfUrl || form.invPdfUrl,
-          invImgUrl: invImgUrl || form.invImgUrl,
-          invPdfEmployeeUrl: invPdfEmployeeUrl || form.invPdfEmployeeUrl,
-          invImgEmployeeUrl: invImgEmployeeUrl || form.invImgEmployeeUrl,
-          status: "หัวหน้าอนุมัติ",
+          uid: user.uid,
+          adminleader: user.adminleader || user.name || "",
+          company: user.company,
+          division: user.division,
+          employee: user.name,
+          role: user.role,
           date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
-          nextDate: form.nextDate ? Timestamp.fromDate(new Date(form.nextDate)) : "",
+          nextDate: nextDate ? Timestamp.fromDate(new Date(nextDate)) : "",
+          invPdfUrl,
+          invImgUrl,
+          invPdfEmployeeUrl,
+          invImgEmployeeUrl,
+          status: "Recurring",
+          createdAt: Timestamp.now()
         };
-        // ลบ field ที่เป็น undefined ออกจาก updatePayload
-        Object.keys(updatePayload).forEach(key => {
-          if (updatePayload[key] === undefined) delete updatePayload[key];
-        });
-        await updateDoc(doc(db, "expenses", editId), updatePayload);
-        setSuccess("อัปเดตรายการสำเร็จ!");
+        await addDoc(collection(db, "recurring"), recurringData);
+        
+        // บันทึกเป็นรายการปกติด้วย
+        const expenseData = {
+          ...form,
+          entryType: "expense", // เปลี่ยนเป็น expense
+          uid: user.uid,
+          adminleader: user.adminleader || user.name || "",
+          company: user.company,
+          division: user.division,
+          employee: user.name,
+          role: user.role,
+          date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
+          nextDate: "", // ไม่มี nextDate สำหรับรายการปกติ
+          invPdfUrl,
+          invImgUrl,
+          invPdfEmployeeUrl,
+          invImgEmployeeUrl,
+          status: expenseStatus, // ใช้สถานะตามเงื่อนไขปกติ
+          createdAt: Timestamp.now()
+        };
+        await addDoc(collection(db, "expenses"), expenseData);
+        
+        setSuccess("บันทึกข้อมูลสำเร็จ! (ทั้ง recurring และรายการปกติ)");
+        setForm(f => ({ ...f, item: "", date: "", bank: "", accountNumber: "", accountName: "", amount: "", expenseType: "", nextDate: "", frequency: "" }));
+        setInvPdf(null); setInvImg(null); setInvPdfEmployee(null); setInvImgEmployee(null);
         setTimeout(() => navigate('/dashboard'), 1000);
         setLoading(false);
         return;
       }
-      // Add new document as before
+      
+      // บันทึกรายการปกติ
       const data = {
         ...form,
         uid: user.uid,
@@ -156,7 +282,7 @@ function Form() {
         employee: user.name,
         role: user.role,
         date: form.date ? Timestamp.fromDate(new Date(form.date)) : "",
-        nextDate: form.nextDate ? Timestamp.fromDate(new Date(form.nextDate)) : "",
+        nextDate: nextDate ? Timestamp.fromDate(new Date(nextDate)) : "",
         invPdfUrl,
         invImgUrl,
         invPdfEmployeeUrl,
@@ -164,7 +290,7 @@ function Form() {
         status,
         createdAt: Timestamp.now()
       };
-      await addDoc(collection(db, "expenses"), data);
+      await addDoc(collection(db, targetCollection), data);
       setSuccess("บันทึกข้อมูลสำเร็จ!");
       setForm(f => ({ ...f, item: "", date: "", bank: "", accountNumber: "", accountName: "", amount: "", expenseType: "", nextDate: "", frequency: "" }));
       setInvPdf(null); setInvImg(null); setInvPdfEmployee(null); setInvImgEmployee(null);
@@ -178,7 +304,14 @@ function Form() {
 
   return (
     <div className="container py-5">
-      <h2 className="mb-3">📋 กรอกรายการค่าใช้จ่าย</h2>
+      <h2 className="mb-3">
+        {isEditMode ? "✏️ แก้ไขรายการค่าใช้จ่าย" : "📋 กรอกรายการค่าใช้จ่าย"}
+      </h2>
+      {isEditMode && originalStatus && (
+        <div className="alert alert-info">
+          <strong>สถานะปัจจุบัน:</strong> {originalStatus}
+        </div>
+      )}
       {success && <div className="alert alert-success">{success}</div>}
       {error && <div className="alert alert-danger">{error}</div>}
       <form className="row g-3" onSubmit={handleSubmit}>
@@ -243,7 +376,9 @@ function Form() {
           <input type="file" name="invImgEmployee" className="form-control" accept="image/*" onChange={handleFileChange} />
         </div>
         <div className="col-12">
-          <button type="submit" className="btn btn-success" disabled={loading}>{loading ? "กำลังบันทึก..." : "💾 บันทึก"}</button>
+          <button type="submit" className="btn btn-success" disabled={loading}>
+            {loading ? "กำลังบันทึก..." : (isEditMode ? "💾 อัปเดต" : "💾 บันทึก")}
+          </button>
         </div>
       </form>
     </div>

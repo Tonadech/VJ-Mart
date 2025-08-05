@@ -54,4 +54,112 @@ button.btn.add:hover { background-color: #005f99; }
 label[for="entryTypeFilter"] { display: block; font-size: 0.95rem; color: #005f99; margin-bottom: 6px; }
 select.form-select { width: 100%; padding: 10px 12px; font-size: 0.95rem; border: 1px solid #ccc; border-radius: 6px; background-color: #f9f9f9; color: #333; outline: none; transition: border-color 0.3s, box-shadow 0.3s; }
 select.form-select:hover { border-color: #007acc; }
-select.form-select:focus { border-color: #007acc; box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2); } 
+select.form-select:focus { border-color: #007acc; box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2); }
+
+/* Responsive Design for Mobile */
+@media (max-width: 768px) {
+  .main-header {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 15px;
+    gap: 10px;
+  }
+  
+  .header-left {
+    flex-direction: column;
+    text-align: center;
+    gap: 5px;
+  }
+  
+  .header-right {
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .dashboard-main {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  #left-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+    padding: 15px;
+  }
+  
+  #right-panel {
+    padding: 15px;
+    background: #f9f9f9;
+  }
+  
+  .status-summary {
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .status-box {
+    width: calc(50% - 8px);
+    min-width: 120px;
+    height: 70px;
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+  
+  .item {
+    padding: 10px 12px;
+    font-size: 0.95rem;
+  }
+  
+  #item-detail p {
+    font-size: 1rem;
+    margin: 6px 0;
+  }
+  
+  #item-detail img {
+    max-width: 100%;
+    max-height: 250px;
+  }
+  
+  .lightbox {
+    padding: 10px;
+  }
+  
+  .lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+  }
+  
+  button.btn {
+    font-size: 0.9rem;
+    padding: 8px 12px;
+  }
+  
+  h1, h3 {
+    font-size: 1.2rem;
+  }
+  
+  .welcome-text {
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-header {
+    padding: 10px 20px;
+  }
+  
+  .header-left {
+    gap: 15px;
+  }
+  
+  #left-panel {
+    width: 350px;
+  }
+  
+  .status-box {
+    width: 130px;
+    height: 75px;
+  }
+} 

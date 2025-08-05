@@ -3,12 +3,11 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 // Import page components (to be created)
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import HRDashboard from "./pages/HRDashboard";
 import Form from "./pages/Form";
 import CheckForm from "./pages/CheckForm";
 import Forgot from "./pages/Forgot";
 import Reset from "./pages/Reset";
-import Test from "./pages/Test";
+import HRDashboard from "./pages/HRDashboard";
 
 function App() {
   return (
@@ -21,7 +20,7 @@ function App() {
         <Route path="/checkform" element={<CheckForm />} />
         <Route path="/forgot" element={<Forgot />} />
         <Route path="/reset" element={<Reset />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/hrdashboard" element={<HRDashboard />} />
       </Routes>
     </Router>
   );

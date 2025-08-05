@@ -6,7 +6,8 @@ const { onSchedule } = require("firebase-functions/v2/scheduler");
 
 exports.createFromRecurring = onSchedule(
   {
-    schedule: "*/5 * * * *",
+    // schedule: "*/5 * * * *",
+    schedule: "0 0 * * *",
     timeZone: "Asia/Bangkok",
   },
   async (event) => {
@@ -57,6 +58,7 @@ exports.createFromRecurring = onSchedule(
 
         batch.set(newExpenseRef, {
           ...data,
+          entrytype: "expense",
           status: "รอทำเบิก",
           fromRecurringId: doc.id,
           timestamp: admin.firestore.FieldValue.serverTimestamp(),

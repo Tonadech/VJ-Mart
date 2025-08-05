@@ -41,7 +41,7 @@ function Home() {
         localStorage.setItem("user", JSON.stringify({ uid, name, role, adminleader, division, company }));
         // Redirect based on role
         if (role === "vj" || role === "hr") {
-          window.location.href = "/test";
+          window.location.href = "/hrdashboard";
         } else {
           window.location.href = "/dashboard";
         }
@@ -49,7 +49,16 @@ function Home() {
         setError("ไม่พบข้อมูลผู้ใช้ในระบบ");
       }
     } catch (err) {
-      setError("เข้าสู่ระบบล้มเหลว: " + err.message);
+      // แสดงข้อความ error ที่เหมาะสมแทน Firebase error
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-email') {
+        setError("อีเมล หรือรหัสผ่านของคุณไม่ถูกต้อง");
+      } else if (err.code === 'auth/too-many-requests') {
+        setError("มีการพยายามเข้าสู่ระบบมากเกินไป กรุณาลองใหม่ในภายหลัง");
+      } else if (err.code === 'auth/user-disabled') {
+        setError("บัญชีนี้ถูกระงับการใช้งาน");
+      } else {
+        setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง");
+      }
     } finally {
       setLoading(false);
     }
@@ -61,15 +70,15 @@ function Home() {
         <div className="row justify-content-sm-center h-100">
           <div className="col-xxl-4 col-xl-5 col-lg-5 col-md-7 col-sm-9">
             <div className="text-center my-5">
-              <img src="https://getbootstrap.com/docs/5.0/assets/brand/bootstrap-logo.svg" alt="logo" width="100" />
+              <img src="/logo192.png" alt="VJ Mart Logo" width="100" />
             </div>
             <div className="card shadow-lg">
               <div className="card-body p-5">
-                <h1 className="fs-4 card-title fw-bold mb-4">Login</h1>
+                <h1 className="fs-4 card-title fw-bold mb-4">เข้าสู่ระบบ The Bills</h1>
                 {error && <div className="alert alert-danger">{error}</div>}
                 <form className="needs-validation" noValidate autoComplete="off" onSubmit={handleSubmit}>
                   <div className="mb-3">
-                    <label className="mb-2 text-muted" htmlFor="email">E-Mail Address</label>
+                    <label className="mb-2 text-muted" htmlFor="email">อีเมล</label>
                     <input id="email" type="email" className="form-control" name="email" required autoFocus value={email} onChange={e => setEmail(e.target.value)} />
                     <div className="invalid-feedback">
                       Email is invalid
@@ -77,9 +86,9 @@ function Home() {
                   </div>
                   <div className="mb-3">
                     <div className="mb-2 w-100">
-                      <label className="text-muted" htmlFor="password">Password</label>
+                      <label className="text-muted" htmlFor="password">รหัสผ่าน</label>
                       <a href="/forgot" className="float-end">
-                        Forgot Password?
+                        ลืมรหัสผ่าน?
                       </a>
                     </div>
                     <input id="password" type="password" className="form-control" name="password" required value={password} onChange={e => setPassword(e.target.value)} />
@@ -90,22 +99,18 @@ function Home() {
                   <div className="d-flex align-items-center">
                     <div className="form-check">
                       <input type="checkbox" name="remember" id="remember" className="form-check-input" />
-                      <label htmlFor="remember" className="form-check-label">Remember Me</label>
+                      <label htmlFor="remember" className="form-check-label">จดจำฉัน</label>
                     </div>
                     <button type="submit" className="btn btn-primary ms-auto" disabled={loading}>
-                      {loading ? "Logging in..." : "Login"}
+                      {loading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
                     </button>
                   </div>
                 </form>
               </div>
-              <div className="card-footer py-3 border-0">
-                <div className="text-center">
-                  Don't have an account? <a href="/register" className="text-dark">Create One</a>
-                </div>
-              </div>
+
             </div>
             <div className="text-center mt-5 text-muted">
-              Copyright &copy; 2017-2021 &mdash; Your Company
+              Copyright &copy; 2024 
               {/* <button onClick={createTestUser}>สร้างผู้ใช้ตัวอย่าง</button> */}
             </div>
           </div>
